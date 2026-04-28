@@ -13,6 +13,7 @@ import pandas as pd
 import threading
 import queue
 import tempfile
+import sys  # ADD THIS
 
 # ================= SETTINGS =================
 EAR_THRESHOLD = 0.25
@@ -44,10 +45,19 @@ def calculate_MAR(mouth):
     return euclidean(mouth[0], mouth[1]) / euclidean(mouth[2], mouth[3])
 
 def play_alarm():
-    if os.path.exists(ALARM_SOUND):
-        os.system(f"afplay {ALARM_SOUND} &")  # macOS sound
-        # For Windows: os.system(f"start {ALARM_SOUND}")
-        # For Linux: os.system(f"aplay {ALARM_SOUND}")
+    try:
+        if os.path.exists(ALARM_SOUND):
+            # For macOS
+            if sys.platform == "darwin":
+                os.system(f"afplay {ALARM_SOUND} &")
+            # For Windows
+            elif sys.platform == "win32":
+                os.system(f"start {ALARM_SOUND}")
+            # For Linux
+            else:
+                os.system(f"aplay {ALARM_SOUND} &")
+    except:
+        pass  # Silently fail if sound can't play
 
 class DrowsinessDetector:
     def __init__(self):
@@ -309,9 +319,6 @@ while not stop_button:
     
     # Update metrics
     with col2:
-        ear_percentage = (1 - min(1, ear/ear_threshold)) * 100 if ear < ear_threshold else 0
-        mar_percentage = min(100, (mar/mar_threshold) * 100) if mar > 0 else 0
-        
         ear_placeholder.metric(
             "Eye Aspect Ratio (EAR)",
             f"{ear:.3f}",
